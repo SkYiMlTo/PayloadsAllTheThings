@@ -53,14 +53,10 @@ def gen_xbin_sync():
             seq.append(0)
         else:
             seq.append(128 + 64 - i - 1)
-    for i in range(4, 0, -1):
-        seq.append(128 + i - 1)
-    seq.append(0)
-    seq.append(0)
-    for i in range(12, 0, -1):
-        seq.append(128 + i - 1)
-    seq.append(0)
-    seq.append(0)
+    seq.extend(128 + i - 1 for i in range(4, 0, -1))
+    seq.extend((0, 0))
+    seq.extend(128 + i - 1 for i in range(12, 0, -1))
+    seq.extend((0, 0))
     return seq
 
 
@@ -75,14 +71,12 @@ def test_xbin_sync(seq):
                 assert seq[cur_ind] & (64 + 128) == 128
                 cur_ind += (seq[cur_ind] & 63) + 3
             path.append(cur_ind)
-        assert cur_ind == len(seq), "problem for path {}".format(path)
+        assert cur_ind == len(seq), f"problem for path {path}"
 
 
 def echo_seq(s):
     assert len(s) % 16 == 0
-    res = []
-    for i in range(0, len(s), 16):
-        res.append(echo_block(s[i:i + 16]))
+    res = [echo_block(s[i:i + 16]) for i in range(0, len(s), 16)]
     return ''.join(res)
 
 
@@ -110,12 +104,15 @@ def gen_xbin_packet_playlist(filename, offset, packet_size):
         assert packet_size > 0
         part_size = min(packet_size, 64)
         packet_size -= part_size
-        result.append(echo_block(gen_xbin_packet_header(part_size)))
-        result.append(
-            EXTERNAL_REFERENCE_PLAYLIST.format(
-                size=part_size,
-                offset=offset,
-                filename=filename))
+        result.extend(
+            (
+                echo_block(gen_xbin_packet_header(part_size)),
+                EXTERNAL_REFERENCE_PLAYLIST.format(
+                    size=part_size, offset=offset, filename=filename
+                ),
+            )
+        )
+
         offset += part_size
     return ''.join(result), offset
 
@@ -134,8 +131,10 @@ def gen_xbin_playlist(filename_to_read):
                 next_delta = 0
             offset = new_offset
         pls.append(SYNC)
-    return FULL_PLAYLIST.format(content=''.join(pls), rand=''.join(
-        random.choice(string.ascii_lowercase) for i in range(30)))
+    return FULL_PLAYLIST.format(
+        content=''.join(pls),
+        rand=''.join(random.choice(string.ascii_lowercase) for _ in range(30)),
+    )
 
 
 if __name__ == "__main__":

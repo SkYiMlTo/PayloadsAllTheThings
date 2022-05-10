@@ -12,18 +12,16 @@ LOOP_BACK_PORT_NUMBER = 8000
 def FuzzWebSocket(fuzz_value):
     print(fuzz_value)
     ws.send(ws_message.replace("[FUZZ]", str(fuzz_value[0])))
-    result =  ws.recv()
-    return result
+    return ws.recv()
 
 def LoadMessage(file):
     file_contents = ""
     try:
         if os.path.isfile(file):
-            f = open(file,'r')
-            file_contents = f.read()
-            f.close()
+            with open(file,'r') as f:
+                file_contents = f.read()
     except:
-        print("Error reading file: %s" % file)
+        print(f"Error reading file: {file}")
         exit()
     return file_contents
 
